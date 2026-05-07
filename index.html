@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Believe Crash</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:#070b14;
+  overflow:hidden;
+  font-family:'Inter',sans-serif;
+  color:white;
+}
+
+.topbar{
+  height:80px;
+  background:#0d1420;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 25px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+
+.logo{
+  font-family:'Orbitron',sans-serif;
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:3px;
+
+  background:linear-gradient(
+    90deg,
+    #00ffcc,
+    #00a2ff,
+    #7b61ff
+  );
+
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.balance{
+  background:#131d2d;
+  padding:12px 18px;
+  border-radius:14px;
+  color:#00ffcc;
+  font-weight:700;
+}
+
+.game{
+  position:relative;
+  width:100%;
+  height:calc(100vh - 80px);
+}
+
+canvas{
+  width:100%;
+  height:100%;
+}
+
+.multiplier{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+
+  font-size:90px;
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+
+  color:#00ffcc;
+
+  text-shadow:
+    0 0 10px #00ffcc,
+    0 0 30px #00ffcc;
+}
+
+.controls{
+  position:absolute;
+  bottom:30px;
+  left:50%;
+  transform:translateX(-50%);
+
+  display:flex;
+  gap:20px;
+}
+
+input{
+  width:180px;
+  height:58px;
+
+  border:none;
+  outline:none;
+
+  background:#131d2d;
+  border-radius:16px;
+
+  color:white;
+  font-size:20px;
+
+  padding:0 15px;
+
+  font-family:'Orbitron',sans-serif;
+}
+
+button{
+  height:58px;
+  padding:0 40px;
+
+  border:none;
+  border-radius:16px;
+
+  cursor:pointer;
+
+  font-size:18px;
+  font-weight:800;
+
+  font-family:'Orbitron',sans-serif;
+
+  background:linear-gradient(
+    135deg,
+    #00ffcc,
+    #00a2ff
+  );
+
+  color:black;
+}
+
+.history{
+  position:absolute;
+  top:20px;
+  right:20px;
+
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+
+  width:300px;
+  justify-content:flex-end;
+}
+
+.history div{
+  background:#131d2d;
+  padding:10px 14px;
+  border-radius:12px;
+
+  font-family:'Orbitron',sans-serif;
+  font-weight:700;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+
+  <div class="logo">
+    BELIEVE CRASH
+  </div>
+
+  <div class="balance">
+    💰 $1,250
+  </div>
+
+</div>
+
+<div class="game">
+
+  <div class="history" id="history"></div>
+
+  <div class="multiplier" id="multiplier">
+    1.00x
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls">
+
+    <input type="number" value="10">
+
+    <button id="startBtn">
+      START
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+resize();
+
+window.addEventListener("resize",resize);
+
+const multiplierText = document.getElementById("multiplier");
+const startBtn = document.getElementById("startBtn");
+const historyBox = document.getElementById("history");
+
+let multiplier = 1;
+let running = false;
+let points = [];
+
+function drawGrid(){
+
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 1;
+
+  for(let x=0;x<canvas.width;x+=60){
+
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,canvas.height);
+    ctx.stroke();
+
+  }
+
+  for(let y=0;y<canvas.height;y+=60){
+
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(canvas.width,y);
+    ctx.stroke();
+
+  }
+
+}
+
+function drawChart(){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  drawGrid();
+
+  ctx.beginPath();
+
+  ctx.moveTo(0,canvas.height);
+
+  for(let i=0;i<points.length;i++){
+
+    let x = i * 8;
+    let y = canvas.height - points[i];
+
+    ctx.lineTo(x,y);
+
+  }
+
+  ctx.strokeStyle = "#00ffcc";
+  ctx.lineWidth = 5;
+
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = "#00ffcc";
+
+  ctx.stroke();
+
+}
+
+function addHistory(value){
+
+  const div = document.createElement("div");
+
+  div.innerText = value.toFixed(2) + "x";
+
+  if(value < 2){
+
+    div.style.color = "#ff4d4d";
+
+  }else{
+
+    div.style.color = "#00ffcc";
+
+  }
+
+  historyBox.prepend(div);
+
+  if(historyBox.children.length > 8){
+
+    historyBox.removeChild(historyBox.lastChild);
+
+  }
+
+}
+
+function startGame(){
+
+  running = true;
+
+  multiplier = 1;
+  points = [];
+
+  startBtn.disabled = true;
+  startBtn.innerText = "RUNNING";
+
+  const crashPoint = (Math.random()*8+1).toFixed(2);
+
+  const game = setInterval(()=>{
+
+    multiplier += 0.02;
+
+    let growth = Math.pow(multiplier,2.3);
+
+    points.push(growth * 8);
+
+    drawChart();
+
+    multiplierText.innerText =
+      multiplier.toFixed(2) + "x";
+
+    if(multiplier >= crashPoint){
+
+      clearInterval(game);
+
+      multiplierText.innerText =
+        "CRASHED @" + crashPoint + "x";
+
+      multiplierText.style.color = "#ff4d4d";
+
+      addHistory(parseFloat(crashPoint));
+
+      running = false;
+
+      setTimeout(()=>{
+
+        multiplierText.innerText = "1.00x";
+
+        multiplierText.style.color = "#00ffcc";
+
+        startBtn.disabled = false;
+
+        startBtn.innerText = "START";
+
+      },2500);
+
+    }
+
+  },50);
+
+}
+
+startBtn.addEventListener("click",()=>{
+
+  if(!running){
+
+    startGame();
+
+  }
+
+});
+
+drawGrid();
+
+</script>
+
+</body>
+</html>
